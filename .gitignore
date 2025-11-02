@@ -1,0 +1,110 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environments
+venv/
+ENV/
+env/
+.venv
+
+# Environment Variables
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+logs/
+data_storage/*.log
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+data_storage/database/*.db
+
+# Model Files (Large, download separately)
+models/base/*
+models/finetuned/*
+!models/base/.gitkeep
+!models/finetuned/.gitkeep
+
+# Training Data (Large, regenerate from Discord)
+data_storage/messages/*.json
+data_storage/embeddings/*
+!data_storage/messages/.gitkeep
+!data_storage/embeddings/.gitkeep
+
+# Cache
+.cache/
+hf_cache/
+__pycache__/
+.pytest_cache/
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+*.ipynb
+
+# Training Artifacts
+checkpoints/
+wandb/
+runs/
+outputs/
+
+# System Files
+Thumbs.db
+.DS_Store
+
+# Backup Files
+*.bak
+*.backup
+backup_*/
+
+# PyInstaller
+*.spec
+build/
+dist/
+
+# Coverage
+.coverage
+htmlcov/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pytest
+.pytest_cache/
+
+# Keep empty directories
+!.gitkeep
