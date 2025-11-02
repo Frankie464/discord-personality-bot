@@ -344,7 +344,7 @@ KEEP EVERYTHING ELSE:
 # Preserve communication diversity
 
 Sampling Strategy:
-- Include all users except opted-out
+- Include all users (except admin-excluded if any)
 - Weight by message count (active users = more influence)
 - Ensure diversity (avoid single-user dominance)
 - Preserve temporal patterns (activity time, day of week)
@@ -614,8 +614,8 @@ Adjustable via GUI:
 ```
 Incoming Discord Message
     ↓
-Privacy Check
-    - User opted out? Skip
+Admin Exclusion Check (if any excluded users)
+    - User admin-excluded? Skip
     ↓
 Context Analysis
     - Is bot mentioned?
@@ -828,8 +828,8 @@ Model Configuration:
 - Context Length: [2048 ▼]
 - GPU Layers: [0 ▼] (CPU-only)
 
-Privacy:
-- Opted-out Users: [View/Edit List]
+Admin Privacy Controls (hidden):
+- Excluded Users: [View/Edit List]
 - Data Retention: [Forever ▼]
 
 Advanced:
@@ -914,55 +914,44 @@ def remove_from_startup():
     winreg.CloseKey(key)
 ```
 
-## Privacy and Opt-Out System
+## Privacy and Data Management
 
 ### Privacy Philosophy
 
-**User Rights**:
-- Right to be forgotten: Users can opt out at any time
-- Data deletion: Opted-out user messages removed from training data
-- Transparency: Clear communication about data usage
-- Consent: Opt-out announcement on bot startup
+**Data Handling**:
+- All data stored locally only
+- No external sharing or cloud uploads
+- Server-wide personality training (blended from all users)
+- Admin-only data management controls
 
-### Opt-Out Implementation
+### Admin-Only Privacy Controls
 
-**Database Schema**:
+**Database Schema** (for admin use):
 ```sql
-CREATE TABLE opted_out_users (
+CREATE TABLE excluded_users (
     user_id TEXT PRIMARY KEY,
     username TEXT,
-    opted_out_at TIMESTAMP,
-    reason TEXT
+    excluded_at TIMESTAMP,
+    reason TEXT,
+    excluded_by_admin TEXT
 );
 ```
 
-**Opt-Out Flow**:
+**Admin Exclusion Flow** (hidden feature):
 ```python
-1. User sends !optout command
-2. Bot adds user to opted_out_users table
-3. Bot confirms via DM or channel message
-4. Message fetcher excludes user from future scrapes
-5. Training pipeline filters out user's messages
-6. Existing trained model continues (can't remove from weights)
-7. Next retraining cycle excludes user completely
+1. Admin uses hidden command: !exclude <user_id> [reason]
+2. Bot adds user to excluded_users table
+3. Message fetcher excludes user from future scrapes
+4. Training pipeline filters out user's messages
+5. Existing trained model continues (can't remove from weights)
+6. Next retraining cycle excludes user completely
 ```
 
-**Announcement System**:
+**No Public Announcements**:
 ```python
-On bot startup:
-- Check if announcement sent in last 30 days
-- If not, post opt-out announcement:
-
-"👋 This server uses a personality bot that learns from chat history.
-
-Your messages help train the bot to sound like our community. If you'd
-like to opt out, use the !optout command. Your past messages will be
-excluded from future training.
-
-Questions? Contact [admin]."
-
-- Store announcement timestamp
-- Don't spam (30-day cooldown)
+# Message fetching is silent - no announcements
+# No opt-out system advertised to users
+# Admin-only controls for edge cases or legal requirements
 ```
 
 ### Data Retention
@@ -971,14 +960,14 @@ Questions? Contact [admin]."
 ```python
 Raw Message Data:
 - Keep for training and retraining
-- Delete opted-out user messages
+- Delete only if legally required or admin excluded
 - No external sharing or API access
 - Stored locally only
 
 Training Data:
 - Derivative of raw messages
 - Regenerate on each training cycle
-- Exclude opted-out users
+- Exclude admin-specified users only
 - Delete after training complete (optional)
 
 Model Weights:
@@ -988,7 +977,7 @@ Model Weights:
 
 Logs:
 - Rotate after 30 days (configurable)
-- Anonymize user IDs in archived logs
+- Can anonymize user IDs if needed
 - Purge old logs automatically
 ```
 
@@ -1028,8 +1017,8 @@ Logs:
 !help
     Show available commands
 
-!optout (any user)
-    Opt out of personality training
+!exclude <user_id> [reason] (admin only, hidden)
+    Exclude specific user from training data
 ```
 
 ### Admin Privileges
@@ -1090,7 +1079,7 @@ Weekly:
 
 Monthly:
 - Fetch new messages (incremental)
-- Review opted-out users list
+- Review excluded users list (if any)
 - Rotate/archive old logs
 - Backup database and model
 
@@ -1426,10 +1415,10 @@ Inference:
    - Respect rate limits
 
 2. User Privacy
-   - Implement opt-out system
-   - Comply with GDPR/CCPA if applicable
-   - Store data securely locally
-   - Don't share training data externally
+   - Admin-only exclusion controls (for legal compliance)
+   - Comply with GDPR/CCPA if legally required
+   - Store data securely locally only
+   - Never share training data externally
 
 3. Content Generation
    - Bot may generate offensive content (personality replication)

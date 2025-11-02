@@ -10,7 +10,7 @@ Unlike typical chatbots that provide generic responses, this bot captures and re
 - 🎭 **Authentic Personality**: 90%+ match to server communication style
 - ⚡ **Fast Responses**: 2-3 seconds on consumer hardware (laptop CPU)
 - 🖥️ **Easy Management**: CustomTkinter GUI for one-click control
-- 🔒 **Privacy-First**: Robust opt-out system for users
+- 🔒 **Secure**: All data stored locally, admin-only controls
 - 🎯 **Modern AI**: Uses Qwen2.5-3B-Instruct (November 2025 state-of-the-art)
 - 🔧 **Hardware Optimized**: Trains on RTX 3070, runs on laptop
 
@@ -135,9 +135,9 @@ python launcher.py
 
 ### User Commands
 
-**None** - Bot responds naturally without commands!
+**None** - Bot responds naturally without commands! All management is admin-only.
 
-### Admin Commands
+### Admin Commands (Hidden from regular users)
 
 ```
 !setrate <0.0-1.0>   - Set response probability (0.05 = 5%)
@@ -147,29 +147,33 @@ python launcher.py
 !restart             - Restart bot process
 !fetch               - Manually fetch new messages
 !train               - Manually trigger retraining
-!help                - Show available commands
-!optout              - Opt out of personality training (any user)
+!exclude <user_id>   - Exclude specific user from training (admin only)
+!help                - Show available admin commands
 ```
 
-## Privacy & Opt-Out
+## Privacy & Data Management
 
-### For Server Members
+### Data Handling
 
-**To opt out of personality training:**
-1. Send `!optout` command in any channel
-2. Your messages will be excluded from future training
-3. Existing trained model continues (weights can't be "unlearned")
-4. Next retraining cycle fully excludes your messages
+**Local Storage Only:**
+- ✅ All data stored on your local machine
+- ✅ No cloud uploads or external API calls
+- ✅ Complete control over your server's data
+- ✅ Silent operation (no announcements to users)
 
-### For Server Admins
+### Admin Controls
 
-The bot automatically posts an opt-out announcement on startup (30-day cooldown). Users have clear notice and control over their data usage.
+**User Exclusion** (if needed for legal compliance):
+- Admin-only `!exclude <user_id>` command
+- Manually exclude specific users from training data
+- Hidden feature - not advertised to regular users
+- For edge cases or legal requirements only
 
-**Privacy Features:**
-- ✅ All data stored locally (no cloud uploads)
-- ✅ Opted-out users completely excluded from training
-- ✅ Transparent data usage disclosure
-- ✅ User-controlled data deletion
+**Data Management:**
+- Message history stored in `data_storage/messages/`
+- Training data regenerated from messages as needed
+- Model weights cannot "unlearn" specific users (requires retraining)
+- All operations controlled through GUI or admin commands
 
 ## Project Structure
 
@@ -192,7 +196,7 @@ discord-personality-bot/
 │
 ├── data/                        # Data collection
 │   ├── fetcher.py               # Message scraping
-│   └── privacy.py               # Opt-out system
+│   └── privacy.py               # Admin exclusion system
 │
 ├── model/                       # ML components
 │   ├── inference.py             # Generation
@@ -242,7 +246,7 @@ discord-personality-bot/
 
 ### Monthly
 - Fetch new messages (incremental)
-- Review opted-out users
+- Review excluded users (if any)
 - Rotate logs
 
 ### Quarterly

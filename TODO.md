@@ -101,11 +101,11 @@
   - [ ] Incremental fetching (track last message ID)
 
 - [ ] **Implement data/privacy.py**
-  - [ ] Opt-out user list loading
-  - [ ] Filter messages from opted-out users
-  - [ ] Opt-out command handler (!optout)
-  - [ ] Privacy announcement generator
-  - [ ] User data deletion function
+  - [ ] Excluded user list loading (admin-only)
+  - [ ] Filter messages from excluded users
+  - [ ] Admin exclusion command handler (!exclude)
+  - [ ] Silent operation (no announcements)
+  - [ ] User data deletion function (admin-triggered)
 
 - [ ] **Create scripts/1_fetch_all_history.py**
   - [ ] Load configuration from .env
@@ -129,7 +129,7 @@
   - [ ] Create tables:
     - [ ] `config` (bot settings)
     - [ ] `statistics` (response stats)
-    - [ ] `opted_out_users` (privacy)
+    - [ ] `excluded_users` (admin privacy controls)
     - [ ] `conversation_context` (active conversations)
   - [ ] Helper functions (CRUD operations)
   - [ ] Migration system (for future schema changes)
@@ -148,7 +148,7 @@
 - [ ] Project structure complete (all directories)
 - [ ] Message history collected (20K+ messages minimum)
 - [ ] SQLite database initialized
-- [ ] Privacy system ready for opt-outs
+- [ ] Admin privacy controls implemented (if needed)
 - [ ] No errors in test runs
 
 **Estimated Time**: 20-25 hours
@@ -163,7 +163,7 @@
 - [ ] **Implement data/preprocessor.py**
   - [ ] Load raw message JSONs
   - [ ] Filter bot messages (all bots, not just this one)
-  - [ ] Filter opted-out users
+  - [ ] Filter excluded users (if any)
   - [ ] Filter system notifications
   - [ ] Remove pure link spam
   - [ ] **KEEP**: Single-word, spam, typos, emojis, all lengths
@@ -508,14 +508,14 @@
   - [ ] Discord client setup
   - [ ] Model loading on startup
   - [ ] Event handlers (on_ready, on_message)
-  - [ ] Privacy checks
+  - [ ] Admin exclusion checks (if any)
   - [ ] Probability-based response
   - [ ] Conversation context tracking
   - [ ] Async inference execution
 
 - [ ] **Implement bot/handlers.py**
   - [ ] Message processing pipeline
-  - [ ] Privacy filtering
+  - [ ] Exclusion filtering (if any excluded users)
   - [ ] Context analysis (mentions, threads)
   - [ ] Probability check
   - [ ] Context retrieval (LanceDB)
@@ -532,7 +532,7 @@
   - [ ] !fetch
   - [ ] !train
   - [ ] !help
-  - [ ] !optout (any user)
+  - [ ] !exclude <user_id> (admin only, hidden)
 
 ### Testing on Development Server
 
@@ -559,10 +559,10 @@
   - [ ] !settemp changes temperature
   - [ ] !help lists all commands
 
-- [ ] **Test privacy system**
-  - [ ] !optout command works
-  - [ ] Opted-out user messages ignored
-  - [ ] Announcement sent on startup
+- [ ] **Test admin exclusion (if needed)**
+  - [ ] !exclude command works (admin only)
+  - [ ] Excluded user messages filtered
+  - [ ] No public announcements (silent operation)
 
 ### Error Handling and Logging
 
@@ -599,7 +599,7 @@
 - [ ] LanceDB vector database operational
 - [ ] Discord bot connects and responds
 - [ ] All admin commands functional
-- [ ] Privacy/opt-out system working
+- [ ] Admin exclusion system working (if implemented)
 - [ ] Logging and error handling complete
 - [ ] Performance targets met (<3s responses)
 - [ ] Bot stable on test server (no crashes)
@@ -696,7 +696,7 @@
   - [ ] Notification preferences
   - [ ] Discord configuration fields
   - [ ] Model configuration dropdowns
-  - [ ] Privacy settings
+  - [ ] Admin exclusion controls (hidden)
   - [ ] Advanced options
   - [ ] Save/Cancel buttons
 
@@ -967,8 +967,8 @@
   - [ ] Add new messages to vector database
   - [ ] Monitor dataset growth
 
-- [ ] **Review opted-out users**
-  - [ ] Check for new opt-out requests
+- [ ] **Review excluded users (if any)**
+  - [ ] Check if any admin exclusions needed
   - [ ] Verify exclusion working correctly
 
 - [ ] **Performance review**
@@ -1069,7 +1069,7 @@ No specific completion date - continuous improvement and maintenance.
 
 ### Milestone 1: Data Collection Complete
 - [ ] 20K+ messages collected
-- [ ] Privacy system operational
+- [ ] Admin exclusion system ready (if needed)
 - **Target**: End of Week 2
 
 ### Milestone 2: Model Training Complete
