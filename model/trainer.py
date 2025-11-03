@@ -386,6 +386,9 @@ def train_sft(
         dataloader_num_workers=2,
         ddp_find_unused_parameters=False,
 
+        # Compilation (disable on Windows due to Triton incompatibility)
+        torch_compile=False,  # Triton has limited Windows support
+
         # NO FILTERING (preserve authenticity)
         # These would be in dataset preprocessing, not here
 
@@ -558,6 +561,9 @@ def train_dpo(
 
         # Hardware
         remove_unused_columns=False,
+
+        # Compilation (disable on Windows due to Triton incompatibility)
+        torch_compile=False,  # Triton has limited Windows support
 
         **kwargs
     )
