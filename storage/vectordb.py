@@ -225,9 +225,9 @@ class VectorDatabase:
                     'vector': embedding.tolist()
                 }
 
-                # Add metadata if provided
-                if 'metadata' in msg and msg['metadata']:
-                    doc.update(msg['metadata'])
+                # Note: We don't store metadata in LanceDB to avoid schema conflicts
+                # All metadata is already stored in SQLite database
+                # LanceDB is only for vector search, not data storage
 
                 docs.append(doc)
 
