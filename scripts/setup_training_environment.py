@@ -253,11 +253,11 @@ def get_venv_pip(venv_path: Path) -> Path:
 # Dependency Installation
 # ============================================================================
 
-def upgrade_pip(pip_path: Path):
+def upgrade_pip(python_path: Path):
     """Upgrade pip to latest version"""
     print_info("Upgrading pip to latest version...")
     run_command(
-        [str(pip_path), "install", "--upgrade", "pip"],
+        [str(python_path), "-m", "pip", "install", "--upgrade", "pip"],
         "Upgrading pip"
     )
     print_success("Pip upgraded successfully")
@@ -608,7 +608,7 @@ def main():
         print("  • TRL and other training tools")
         print()
 
-        upgrade_pip(pip_path)
+        upgrade_pip(python_path)
         install_pytorch(pip_path)
         install_transformers_ecosystem(pip_path)
         install_unsloth(pip_path)
