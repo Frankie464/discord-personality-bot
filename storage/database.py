@@ -131,6 +131,28 @@ class Database:
                 ON channel_allowlist(enabled)
             """)
 
+            # Messages table (for training data deduplication)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS messages (
+                    message_id TEXT PRIMARY KEY,
+                    channel_id TEXT NOT NULL,
+                    author_id TEXT NOT NULL,
+                    content TEXT NOT NULL,
+                    timestamp TIMESTAMP NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
+            # Create indexes for message queries
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_messages_channel
+                ON messages(channel_id)
+            """)
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_messages_author
+                ON messages(author_id)
+            """)
+
             # Insert default configuration if not exists
             self._insert_default_config(cursor)
 
@@ -360,6 +382,63 @@ class Database:
                     'errors': 0,
                     'response_rate': 0.0
                 }
+
+    # ===== Training Message Methods =====
+
+    def add_message(
+        self,
+        message_id: str,
+        channel_id: str,
+        author_id: str,
+        content: str,
+        timestamp: str
+    ):
+        """
+        Add a message to the messages table for training data deduplication
+
+        Args:
+            message_id: Discord message ID
+            channel_id: Discord channel ID
+            author_id: Discord author ID
+            content: Message content
+            timestamp: Message timestamp (ISO format)
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT OR IGNORE INTO messages
+                (message_id, channel_id, author_id, content, timestamp)
+                VALUES (?, ?, ?, ?, ?)
+            """, (message_id, channel_id, author_id, content, timestamp))
+
+    def get_message_by_id(self, message_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get a message by ID from the messages table
+
+        Args:
+            message_id: Discord message ID
+
+        Returns:
+            Message dict if found, None otherwise
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT message_id, channel_id, author_id, content, timestamp
+                FROM messages
+                WHERE message_id = ?
+            """, (message_id,))
+
+            row = cursor.fetchone()
+            if row:
+                return {
+                    'message_id': row['message_id'],
+                    'channel_id': row['channel_id'],
+                    'author_id': row['author_id'],
+                    'content': row['content'],
+                    'timestamp': row['timestamp']
+                }
+            return None
 
     # ===== Conversation Context Methods =====
 
