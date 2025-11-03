@@ -53,7 +53,7 @@ try:
     TORCH_AVAILABLE = True
 except ImportError:
     TORCH_AVAILABLE = False
-    print("⚠️  PyTorch not installed")
+    print("[WARNING]  PyTorch not installed")
 
 from model.trainer import (
     load_base_model,
@@ -85,7 +85,7 @@ def validate_environment() -> Dict[str, Any]:
         RuntimeError if environment invalid
     """
     print(f"\n{'='*60}")
-    print(f"🔍 ENVIRONMENT VALIDATION")
+    print(f"[CHECK] ENVIRONMENT VALIDATION")
     print(f"{'='*60}\n")
 
     env_info = {}
@@ -93,13 +93,13 @@ def validate_environment() -> Dict[str, Any]:
     # Check PyTorch
     if not TORCH_AVAILABLE:
         raise RuntimeError("PyTorch not installed. Install with: pip install torch")
-    print(f"✅ PyTorch: {torch.__version__}")
+    print(f"[OK] PyTorch: {torch.__version__}")
     env_info['pytorch_version'] = torch.__version__
 
     # Check CUDA
     if not torch.cuda.is_available():
         raise RuntimeError("CUDA not available. GPU required for training.")
-    print(f"✅ CUDA: {torch.version.cuda}")
+    print(f"[OK] CUDA: {torch.version.cuda}")
     env_info['cuda_version'] = torch.version.cuda
 
     # Check GPU
@@ -107,7 +107,7 @@ def validate_environment() -> Dict[str, Any]:
     gpu_name = torch.cuda.get_device_name(0)
     gpu_mem_gb = torch.cuda.get_device_properties(0).total_memory / (1024 ** 3)
 
-    print(f"✅ GPU: {gpu_name}")
+    print(f"[OK] GPU: {gpu_name}")
     print(f"   Memory: {gpu_mem_gb:.1f} GB")
     print(f"   Count: {gpu_count}")
 
@@ -117,31 +117,31 @@ def validate_environment() -> Dict[str, Any]:
 
     # Warn if GPU memory < 8GB
     if gpu_mem_gb < 7.5:
-        print(f"\n⚠️  Warning: GPU has {gpu_mem_gb:.1f} GB memory")
+        print(f"\n[WARNING]  Warning: GPU has {gpu_mem_gb:.1f} GB memory")
         print(f"   Training may fail with batch_size=2")
         print(f"   Recommend: Use --batch_size 1 or upgrade to RTX 3070+")
 
     # Check disk space
     disk_usage = shutil.disk_usage(os.getcwd())
     free_gb = disk_usage.free / (1024 ** 3)
-    print(f"✅ Disk space: {free_gb:.1f} GB free")
+    print(f"[OK] Disk space: {free_gb:.1f} GB free")
 
     env_info['disk_free_gb'] = free_gb
 
     if free_gb < 30:
-        print(f"\n⚠️  Warning: Only {free_gb:.1f} GB free")
+        print(f"\n[WARNING]  Warning: Only {free_gb:.1f} GB free")
         print(f"   Training requires ~30GB for checkpoints")
         print(f"   Consider cleaning up space before training")
 
     # Check dependencies
     try:
         check_dependencies()
-        print(f"✅ Dependencies: unsloth, trl installed")
+        print(f"[OK] Dependencies: unsloth, trl installed")
     except ImportError as e:
         raise RuntimeError(f"Missing dependencies: {e}")
 
     print(f"\n{'='*60}")
-    print(f"✅ Environment validation passed!")
+    print(f"[OK] Environment validation passed!")
     print(f"{'='*60}\n")
 
     return env_info
@@ -169,7 +169,7 @@ def validate_training_data(
         FileNotFoundError if required files missing
     """
     print(f"\n{'='*60}")
-    print(f"📊 DATA VALIDATION")
+    print(f"[DATA] DATA VALIDATION")
     print(f"{'='*60}\n")
 
     counts = {}
@@ -180,22 +180,22 @@ def validate_training_data(
             raise FileNotFoundError(f"Training data not found: {train_path}")
 
         train_count = sum(1 for _ in open(train_path, 'r', encoding='utf-8'))
-        print(f"✅ Training data: {train_count:,} examples")
+        print(f"[OK] Training data: {train_count:,} examples")
         print(f"   Path: {train_path}")
         counts['train'] = train_count
 
         if train_count < 100:
-            print(f"\n⚠️  Warning: Only {train_count} training examples")
+            print(f"\n[WARNING]  Warning: Only {train_count} training examples")
             print(f"   Recommend at least 1,000 for quality results")
 
     # Validation data (optional but recommended)
     if val_path and os.path.exists(val_path):
         val_count = sum(1 for _ in open(val_path, 'r', encoding='utf-8'))
-        print(f"✅ Validation data: {val_count:,} examples")
+        print(f"[OK] Validation data: {val_count:,} examples")
         print(f"   Path: {val_path}")
         counts['val'] = val_count
     else:
-        print(f"⚠️  No validation data (evaluation disabled)")
+        print(f"[WARNING]  No validation data (evaluation disabled)")
         counts['val'] = 0
 
     # DPO data (required for DPO training)
@@ -204,16 +204,16 @@ def validate_training_data(
             raise FileNotFoundError(f"DPO data not found: {dpo_path}")
 
         dpo_count = sum(1 for _ in open(dpo_path, 'r', encoding='utf-8'))
-        print(f"✅ DPO pairs: {dpo_count:,} pairs")
+        print(f"[OK] DPO pairs: {dpo_count:,} pairs")
         print(f"   Path: {dpo_path}")
         counts['dpo'] = dpo_count
 
         if dpo_count < 100:
-            print(f"\n⚠️  Warning: Only {dpo_count} DPO pairs")
+            print(f"\n[WARNING]  Warning: Only {dpo_count} DPO pairs")
             print(f"   Recommend at least 500 for meaningful DPO training")
 
     print(f"\n{'='*60}")
-    print(f"✅ Data validation passed!")
+    print(f"[OK] Data validation passed!")
     print(f"{'='*60}\n")
 
     return counts
@@ -234,7 +234,7 @@ def run_sft_training(
         Path to SFT checkpoint
     """
     print(f"\n{'='*60}")
-    print(f"🚀 PHASE 1: SUPERVISED FINE-TUNING (SFT)")
+    print(f"==> PHASE 1: SUPERVISED FINE-TUNING (SFT)")
     print(f"{'='*60}\n")
 
     # Load base model
@@ -280,7 +280,7 @@ def run_sft_training(
     )
 
     sft_checkpoint = f"{config['sft_output_dir']}/final"
-    print(f"\n✅ SFT training complete: {sft_checkpoint}")
+    print(f"\n[OK] SFT training complete: {sft_checkpoint}")
 
     return sft_checkpoint
 
@@ -340,7 +340,7 @@ def run_dpo_training(
     )
 
     dpo_checkpoint = f"{config['dpo_output_dir']}/final"
-    print(f"\n✅ DPO training complete: {dpo_checkpoint}")
+    print(f"\n[OK] DPO training complete: {dpo_checkpoint}")
 
     return dpo_checkpoint
 
@@ -360,7 +360,7 @@ def merge_and_save_final(
         Path to merged model
     """
     print(f"\n{'='*60}")
-    print(f"💾 PHASE 3: MERGING & SAVING")
+    print(f"[SAVE] PHASE 3: MERGING & SAVING")
     print(f"{'='*60}\n")
 
     # Load model
@@ -378,7 +378,7 @@ def merge_and_save_final(
         save_method="merged_16bit"
     )
 
-    print(f"\n✅ Model merged and saved: {merged_path}")
+    print(f"\n[OK] Model merged and saved: {merged_path}")
 
     return merged_path
 
@@ -405,7 +405,7 @@ def convert_to_gguf(
     print(f"🔧 PHASE 4: GGUF CONVERSION & QUANTIZATION")
     print(f"{'='*60}\n")
 
-    print(f"⚠️  GGUF conversion requires llama.cpp")
+    print(f"[WARNING]  GGUF conversion requires llama.cpp")
     print(f"   Manual steps:")
     print(f"   1. Clone llama.cpp: git clone https://github.com/ggerganov/llama.cpp")
     print(f"   2. Build: cd llama.cpp && make")
@@ -446,7 +446,7 @@ def print_training_summary(
     hours = duration.total_seconds() / 3600
 
     print(f"\n{'='*60}")
-    print(f"✅ TRAINING COMPLETE!")
+    print(f"[OK] TRAINING COMPLETE!")
     print(f"{'='*60}\n")
 
     print(f"Training Summary:")
@@ -575,7 +575,7 @@ def main():
 
     # Test mode adjustments
     if args.test:
-        print("\n⚠️  TEST MODE: Using small dataset and 1 epoch")
+        print("\n[WARNING]  TEST MODE: Using small dataset and 1 epoch")
         config['sft_epochs'] = 1
         config['dpo_epochs'] = 1
         config['max_samples'] = 100
@@ -584,15 +584,15 @@ def main():
 
     # Header
     print(f"\n{'='*60}")
-    print(f"🚀 MODEL TRAINING PIPELINE")
+    print(f"==> MODEL TRAINING PIPELINE")
     print(f"{'='*60}")
     print(f"Mode: {args.mode.upper()}")
     print(f"Base Model: {args.base_model}")
     print(f"Output: {args.output_dir}")
     if args.test:
-        print(f"⚠️  TEST MODE ENABLED")
+        print(f"[WARNING]  TEST MODE ENABLED")
     if args.dry_run:
-        print(f"⚠️  DRY RUN (validation only)")
+        print(f"[WARNING]  DRY RUN (validation only)")
     print(f"{'='*60}\n")
 
     start_time = datetime.now()
@@ -610,13 +610,13 @@ def main():
         )
 
         if args.dry_run:
-            print("\n✅ Dry run complete. Environment and data validated.")
+            print("\n[OK] Dry run complete. Environment and data validated.")
             print("   Remove --dry_run to start training.")
             return
 
         # Step 3: Confirm training
         print(f"\n{'='*60}")
-        print(f"⚠️  CONFIRM TRAINING")
+        print(f"[WARNING]  CONFIRM TRAINING")
         print(f"{'='*60}")
         print(f"This will take approximately:")
         if args.mode == "sft":
@@ -671,13 +671,13 @@ def main():
         )
 
     except KeyboardInterrupt:
-        print("\n\n⚠️  Training interrupted by user")
+        print("\n\n[WARNING]  Training interrupted by user")
         print("   Checkpoints have been saved")
         print("   You can resume by using the latest checkpoint")
         sys.exit(1)
 
     except Exception as e:
-        print(f"\n\n❌ Training failed: {e}")
+        print(f"\n\n[FAIL] Training failed: {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)
