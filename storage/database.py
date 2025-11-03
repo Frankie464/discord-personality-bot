@@ -139,6 +139,8 @@ class Database:
                     author_id TEXT NOT NULL,
                     content TEXT NOT NULL,
                     timestamp TIMESTAMP NOT NULL,
+                    reactions TEXT,
+                    metadata TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
@@ -391,7 +393,9 @@ class Database:
         channel_id: str,
         author_id: str,
         content: str,
-        timestamp: str
+        timestamp,
+        reactions: Optional[Any] = None,
+        metadata: Optional[Any] = None
     ):
         """
         Add a message to the messages table for training data deduplication
@@ -401,15 +405,30 @@ class Database:
             channel_id: Discord channel ID
             author_id: Discord author ID
             content: Message content
-            timestamp: Message timestamp (ISO format)
+            timestamp: Message timestamp (datetime object or ISO string)
+            reactions: Reaction data (will be JSON serialized)
+            metadata: Additional metadata (will be JSON serialized)
         """
+        import json
+        from datetime import datetime
+
+        # Convert timestamp to string if it's a datetime object
+        if isinstance(timestamp, datetime):
+            timestamp_str = timestamp.isoformat()
+        else:
+            timestamp_str = str(timestamp)
+
+        # Serialize reactions and metadata to JSON
+        reactions_json = json.dumps(reactions) if reactions is not None else None
+        metadata_json = json.dumps(metadata) if metadata is not None else None
+
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
                 INSERT OR IGNORE INTO messages
-                (message_id, channel_id, author_id, content, timestamp)
-                VALUES (?, ?, ?, ?, ?)
-            """, (message_id, channel_id, author_id, content, timestamp))
+                (message_id, channel_id, author_id, content, timestamp, reactions, metadata)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (message_id, channel_id, author_id, content, timestamp_str, reactions_json, metadata_json))
 
     def get_message_by_id(self, message_id: str) -> Optional[Dict[str, Any]]:
         """
