@@ -75,8 +75,30 @@ pip install -r requirements.txt
    - Server Members Intent
    - Message Content Intent
 5. Copy bot token
+6. Invite bot to your server (it can stay offline for now)
 
-### 3. Setup Environment
+### 3. Automated Setup (Easiest Method) ⭐
+
+**NEW**: Just provide your bot credentials and let the script do all the work!
+
+```bash
+python scripts/0_setup_bot.py
+```
+
+The script will:
+- ✅ Prompt for bot token, server ID, channel IDs, admin IDs
+- ✅ Validate all inputs
+- ✅ Create .env file automatically
+- ✅ Initialize database
+- ✅ Set up channel allowlist
+- ✅ Verify configuration
+- ✅ Show next steps
+
+**Takes 2-3 minutes - no manual file editing required!**
+
+### 3 (Alternative). Manual Setup
+
+If you prefer manual configuration:
 
 ```bash
 # Copy template
@@ -87,6 +109,9 @@ cp .env.example .env
 # - DISCORD_SERVER_ID
 # - DISCORD_CHANNEL_IDS
 # - ADMIN_USER_IDS
+
+# Initialize database
+python -c "from storage.database import init_database; init_database()"
 ```
 
 ### 4. Collect Message History
