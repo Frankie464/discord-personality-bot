@@ -257,12 +257,26 @@ class IncrementalMessageFetcher:
             Number of new messages added (duplicates skipped)
         """
         new_count = 0
+        duplicates_this_batch = 0
 
-        for msg in messages:
+        # Progress bar for database storage
+        pbar = tqdm(
+            messages,
+            desc="Storing in database",
+            unit=" msgs",
+            dynamic_ncols=True
+        )
+
+        for msg in pbar:
             # Check if message already exists
             existing = self.db.get_message_by_id(msg['message_id'])
             if existing:
                 self.stats['total_duplicates'] += 1
+                duplicates_this_batch += 1
+                pbar.set_postfix({
+                    'new': new_count,
+                    'duplicates': duplicates_this_batch
+                })
                 continue
 
             # Add to database
@@ -276,7 +290,12 @@ class IncrementalMessageFetcher:
                 metadata=msg  # Store full message dict as metadata
             )
             new_count += 1
+            pbar.set_postfix({
+                'new': new_count,
+                'duplicates': duplicates_this_batch
+            })
 
+        pbar.close()
         return new_count
 
     def _save_json_backup(
