@@ -47,12 +47,8 @@ import torch
 from typing import Tuple, List, Dict, Any, Optional
 from pathlib import Path
 from datasets import Dataset, load_dataset
-from transformers import (
-    TrainingArguments,
-    PreTrainedModel,
-    PreTrainedTokenizer,
-)
 
+# IMPORTANT: Import unsloth BEFORE transformers for optimization
 # Unsloth for efficient QLoRA training
 try:
     from unsloth import FastLanguageModel, is_bfloat16_supported
@@ -61,6 +57,13 @@ except ImportError:
     print("⚠️  Warning: Unsloth not installed. Install with:")
     print("   pip install \"unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git\"")
     UNSLOTH_AVAILABLE = False
+
+# Import transformers AFTER unsloth
+from transformers import (
+    TrainingArguments,
+    PreTrainedModel,
+    PreTrainedTokenizer,
+)
 
 # TRL for SFT and DPO training
 try:
@@ -367,7 +370,7 @@ def train_sft(
         save_total_limit=3,  # Keep only 3 most recent checkpoints
 
         # Evaluation
-        evaluation_strategy="steps" if eval_dataset else "no",
+        eval_strategy="steps" if eval_dataset else "no",
         eval_steps=eval_steps if eval_dataset else None,
         per_device_eval_batch_size=per_device_train_batch_size,
 
