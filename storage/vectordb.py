@@ -137,13 +137,19 @@ class VectorDatabase:
             # Generate embedding
             embedding = self._create_embedding(content)
 
+            # Handle timestamp (could be datetime or string)
+            if isinstance(timestamp, datetime):
+                timestamp_str = timestamp.isoformat()
+            else:
+                timestamp_str = str(timestamp)
+
             # Prepare document
             doc = {
                 'message_id': message_id,
                 'content': content,
                 'author_id': author_id,
                 'channel_id': channel_id,
-                'timestamp': timestamp.isoformat(),
+                'timestamp': timestamp_str,
                 'vector': embedding
             }
 
@@ -203,12 +209,19 @@ class VectorDatabase:
             # Prepare documents
             docs = []
             for msg, embedding in zip(messages, embeddings):
+                # Handle timestamp (could be datetime or string)
+                timestamp = msg['timestamp']
+                if isinstance(timestamp, datetime):
+                    timestamp_str = timestamp.isoformat()
+                else:
+                    timestamp_str = str(timestamp)
+
                 doc = {
                     'message_id': msg['message_id'],
                     'content': msg['content'],
                     'author_id': msg['author_id'],
                     'channel_id': msg['channel_id'],
-                    'timestamp': msg['timestamp'].isoformat(),
+                    'timestamp': timestamp_str,
                     'vector': embedding.tolist()
                 }
 
@@ -404,7 +417,7 @@ class VectorDatabase:
             return {
                 'total_messages': count,
                 'table_exists': True,
-                'embedding_model': self.embedder.get_sentence_embedding_dimension(),
+                'embedding_model': f"{self.embedding_dim}d embeddings",
                 'table_name': self.table_name,
                 'db_path': self.db_path
             }
