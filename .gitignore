@@ -109,3 +109,5 @@ dmypy.json
 
 # Keep empty directories
 !.gitkeep
+unsloth_compiled_cache/
+.claude/settings.local.json
