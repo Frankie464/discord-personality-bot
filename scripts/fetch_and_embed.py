@@ -105,16 +105,12 @@ def main():
 
         if stats['total_new'] == 0:
             print()
-            print("✅ No new messages to process")
-            print("   All channels are up to date")
+            print("✅ No new messages fetched (channels up to date)")
             print()
-            print(f"Completed: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-            print("=" * 70)
-            return
-
-        print()
-        print(f"✅ Fetched {stats['total_new']} new messages")
-        print()
+        else:
+            print()
+            print(f"✅ Fetched {stats['total_new']} new messages")
+            print()
 
     except Exception as e:
         print()
