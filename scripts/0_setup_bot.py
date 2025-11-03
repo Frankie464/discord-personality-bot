@@ -23,6 +23,7 @@ import sys
 from pathlib import Path
 from typing import List, Optional
 import re
+from dotenv import load_dotenv
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
@@ -30,6 +31,33 @@ sys.path.insert(0, str(project_root))
 
 # Change to project root directory
 os.chdir(project_root)
+
+
+def check_requirements():
+    """Check if required packages are installed"""
+    required_packages = [
+        ('dotenv', 'python-dotenv'),
+        ('discord', 'discord.py'),
+    ]
+
+    missing = []
+    for module_name, package_name in required_packages:
+        try:
+            __import__(module_name)
+        except ImportError:
+            missing.append(package_name)
+
+    if missing:
+        print("\n❌ ERROR: Missing required packages!")
+        print("\nPlease install missing packages:")
+        print(f"    pip install {' '.join(missing)}")
+        print("\nOr install all requirements:")
+        print("    pip install -r requirements.txt")
+        sys.exit(1)
+
+
+# Check requirements before proceeding
+check_requirements()
 
 
 def print_header(text: str):
@@ -444,23 +472,57 @@ def main():
     print("  ✅ Your bot token, server ID, channel IDs, and admin user ID ready")
     print()
 
-    ready = input("Ready to begin? (y/n): ").strip().lower()
-    if ready != 'y':
-        print("\nSetup cancelled. Run this script again when you're ready!")
-        sys.exit(0)
+    # Check if .env already exists
+    env_path = project_root / ".env"
+    skip_input = False
 
-    # Step 1: Collect information
-    print_step(1, "Collecting Discord configuration")
+    if env_path.exists():
+        print_warning(".env file already exists!")
+        print("\nOptions:")
+        print("  1. Use existing .env (skip to database/channel setup)")
+        print("  2. Create new .env (enter credentials again)")
+        print()
 
-    token = get_bot_token()
-    server_id = get_server_id()
-    channel_ids = get_channel_ids()
-    admin_ids = get_admin_user_ids()
+        choice = input("Choose option (1 or 2): ").strip()
 
-    print_success("All information collected!")
+        if choice == '1':
+            print_info("Using existing .env configuration. Skipping credential input.")
+            skip_input = True
+        elif choice != '2':
+            print("\nInvalid choice. Run script again.")
+            sys.exit(0)
 
-    # Step 2: Create .env file
-    create_env_file(token, server_id, channel_ids, admin_ids)
+    if not skip_input:
+        ready = input("\nReady to begin? (y/n): ").strip().lower()
+        if ready != 'y':
+            print("\nSetup cancelled. Run this script again when you're ready!")
+            sys.exit(0)
+
+    # Step 1: Collect information (or skip if using existing)
+    if not skip_input:
+        print_step(1, "Collecting Discord configuration")
+
+        token = get_bot_token()
+        server_id = get_server_id()
+        channel_ids = get_channel_ids()
+        admin_ids = get_admin_user_ids()
+
+        print_success("All information collected!")
+
+        # Step 2: Create .env file
+        create_env_file(token, server_id, channel_ids, admin_ids)
+    else:
+        # Load channel IDs from existing .env for channel allowlist setup
+        load_dotenv(env_path)
+        channel_ids_str = os.getenv('DISCORD_CHANNEL_IDS', '')
+        channel_ids = [cid.strip() for cid in channel_ids_str.split(',') if cid.strip()]
+
+        if not channel_ids:
+            print_error("No channel IDs found in .env file!")
+            print_info("Please add DISCORD_CHANNEL_IDS to your .env file or re-run setup.")
+            sys.exit(1)
+
+        print_info(f"Loaded {len(channel_ids)} channel(s) from .env")
 
     # Step 3: Initialize database
     db = initialize_database()
