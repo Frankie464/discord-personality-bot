@@ -205,7 +205,7 @@ class IncrementalMessageFetcher:
                 else:
                     filtered_count += 1
 
-                if pbar:
+                if pbar is not None:
                     pbar.update(1)
                     pbar.set_postfix({
                         'new': len(messages),
@@ -225,7 +225,7 @@ class IncrementalMessageFetcher:
             self.stats['errors'].append(error)
             print(f"❌ {error}")
         finally:
-            if pbar:
+            if pbar is not None:
                 pbar.close()
 
         # Update statistics
