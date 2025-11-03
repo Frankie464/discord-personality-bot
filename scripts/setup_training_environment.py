@@ -371,12 +371,12 @@ if torch.cuda.is_available():
     # Verify can allocate memory
     try:
         x = torch.randn(1000, 1000, device='cuda')
-        print("✅ GPU memory allocation: SUCCESS")
+        print("[OK] GPU memory allocation: SUCCESS")
     except Exception as e:
-        print(f"❌ GPU memory allocation: FAILED - {e}")
+        print(f"[FAIL] GPU memory allocation: FAILED - {e}")
         sys.exit(1)
 else:
-    print("❌ CUDA not available!")
+    print("[FAIL] CUDA not available!")
     print("\\nTroubleshooting:")
     print("  1. Install CUDA Toolkit: https://developer.nvidia.com/cuda-downloads")
     print("  2. Update GPU drivers: https://www.nvidia.com/download/index.aspx")
@@ -437,16 +437,16 @@ failed = []
 for module_name, display_name in packages:
     try:
         __import__(module_name)
-        print(f"✅ {display_name}")
+        print(f"[OK] {display_name}")
     except ImportError as e:
-        print(f"❌ {display_name}: {e}")
+        print(f"[FAIL] {display_name}: {e}")
         failed.append(display_name)
 
 if failed:
-    print(f"\\n❌ Failed to import: {', '.join(failed)}")
+    print(f"\\n[FAIL] Failed to import: {', '.join(failed)}")
     sys.exit(1)
 else:
-    print("\\n✅ All packages imported successfully!")
+    print("\\n[OK] All packages imported successfully!")
 """
 
     result = subprocess.run(
