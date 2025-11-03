@@ -440,24 +440,82 @@ class Database:
         Returns:
             Message dict if found, None otherwise
         """
+        import json
+
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT message_id, channel_id, author_id, content, timestamp
+                SELECT message_id, channel_id, author_id, content, timestamp, reactions, metadata
                 FROM messages
                 WHERE message_id = ?
             """, (message_id,))
 
             row = cursor.fetchone()
             if row:
+                # Deserialize reactions and metadata from JSON
+                reactions = json.loads(row['reactions']) if row['reactions'] else None
+                metadata = json.loads(row['metadata']) if row['metadata'] else None
+
                 return {
                     'message_id': row['message_id'],
                     'channel_id': row['channel_id'],
                     'author_id': row['author_id'],
                     'content': row['content'],
-                    'timestamp': row['timestamp']
+                    'timestamp': row['timestamp'],
+                    'reactions': reactions,
+                    'metadata': metadata
                 }
             return None
+
+    def get_messages_by_channel(
+        self,
+        channel_id: str,
+        limit: Optional[int] = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Get messages from a specific channel
+
+        Args:
+            channel_id: Channel ID to fetch messages from
+            limit: Maximum number of messages to return (most recent first)
+
+        Returns:
+            List of message dictionaries
+        """
+        import json
+
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+
+            query = """
+                SELECT message_id, channel_id, author_id, content, timestamp, reactions, metadata
+                FROM messages
+                WHERE channel_id = ?
+                ORDER BY timestamp DESC
+            """
+
+            if limit is not None:
+                query += f" LIMIT {limit}"
+
+            cursor.execute(query, (channel_id,))
+
+            messages = []
+            for row in cursor.fetchall():
+                # Deserialize reactions and metadata from JSON
+                reactions = json.loads(row['reactions']) if row['reactions'] else None
+                metadata = json.loads(row['metadata']) if row['metadata'] else None
+
+                messages.append({
+                    'message_id': row['message_id'],
+                    'channel_id': row['channel_id'],
+                    'author_id': row['author_id'],
+                    'content': row['content'],
+                    'timestamp': row['timestamp'],
+                    'reactions': reactions,
+                    'metadata': metadata
+                })
+
+            return messages
 
     # ===== Conversation Context Methods =====
 
