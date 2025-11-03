@@ -341,20 +341,19 @@ def setup_channel_allowlist(db, channel_ids: List[str]):
     print_step(4, "Setting up channel allowlist")
 
     try:
-        cursor = db.cursor()
-
-        # Add channels to allowlist
+        # Add channels to allowlist using Database class method
         for channel_id in channel_ids:
-            cursor.execute("""
-                INSERT OR IGNORE INTO channel_allowlist (channel_id, added_at)
-                VALUES (?, datetime('now'))
-            """, (channel_id,))
+            # Use placeholder name since we don't have actual names yet
+            # The fetch script will update with real names later
+            db.add_channel_to_allowlist(
+                channel_id=channel_id,
+                channel_name=f"Channel-{channel_id}",
+                enabled=True
+            )
 
-        db.commit()
-
-        # Verify
-        cursor.execute("SELECT COUNT(*) FROM channel_allowlist")
-        count = cursor.fetchone()[0]
+        # Verify by getting allowed channels
+        allowed = db.get_allowed_channels(enabled_only=False)
+        count = len(allowed)
 
         print_success(f"Added {len(channel_ids)} channel(s) to allowlist")
         print_info(f"Total channels in allowlist: {count}")
