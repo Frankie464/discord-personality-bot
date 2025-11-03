@@ -135,8 +135,9 @@ def generate_response(
 
     Example:
         >>> model = get_model("models/qwen2.5-3b-q4.gguf", chat_format="chatml")
+        >>> from model.prompts import get_system_prompt
         >>> messages = [
-        ...     {"role": "system", "content": "You're a regular on this Discord server."},
+        ...     {"role": "system", "content": get_system_prompt()},
         ...     {"role": "user", "content": "yo what's up"}
         ... ]
         >>> response = generate_response(model, messages, temperature=0.7, max_tokens=120)
@@ -278,8 +279,9 @@ if __name__ == "__main__":
 
         # Test generation
         print("\n4. Testing generation...")
+        from model.prompts import get_system_prompt
         messages = [
-            {"role": "system", "content": "You're a regular on this Discord server."},
+            {"role": "system", "content": get_system_prompt()},
             {"role": "user", "content": "yo what's up"}
         ]
 

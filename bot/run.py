@@ -45,6 +45,7 @@ import discord
 from discord.ext import commands
 
 from model.inference import get_model, generate_response, is_model_loaded
+from model.prompts import get_system_prompt
 from storage.database import init_database
 from storage.vectordb import VectorDatabase
 from bot.watchdog import update_heartbeat
@@ -262,8 +263,8 @@ class PersonalityBot(commands.Bot):
             except Exception as e:
                 print(f"⚠️  RAG context retrieval failed: {e}")
 
-        # Build prompt
-        system_prompt = "You're a regular on this Discord server. Chat naturally."
+        # Build prompt (uses MINIMAL prompt by default from model/prompts.py)
+        system_prompt = get_system_prompt()
 
         messages = [
             {"role": "system", "content": system_prompt}

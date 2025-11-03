@@ -27,6 +27,13 @@ import random
 from collections import Counter
 from datetime import datetime
 
+# Import system prompt for consistency
+import sys
+from pathlib import Path
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+from model.prompts import get_system_prompt
+
 
 def calculate_user_weights(messages: List[Dict[str, Any]]) -> Dict[str, float]:
     """
@@ -239,9 +246,8 @@ def format_for_training(
         }]
     """
     if system_prompt is None:
-        system_prompt = (
-            "You're a regular on this Discord server. Chat naturally."
-        )
+        # Use MINIMAL prompt by default (must match runtime in model/prompts.py)
+        system_prompt = get_system_prompt()
 
     training_examples = []
 

@@ -1,5 +1,7 @@
 # Discord Personality Bot
 
+> **Version**: 2.0-beta | **Last Updated**: November 2025 | **Status**: Training-Ready
+
 A Discord bot that learns authentic personality from server message history through deep fine-tuning, producing responses indistinguishable from real server members.
 
 ⚠️ **IMPORTANT**: Designed for **private Discord servers** (~30 people, trusted friends). **Do not deploy to public or community servers.**
@@ -136,12 +138,33 @@ Run manually or schedule via cron/Task Scheduler (recommended: weekly).
 # Prepare training data (with dataset balancing)
 python scripts/2_prepare_training_data.py
 
-# Train (5-7 hours)
-python scripts/3_train_model.py
+# Train (5-7 hours) - Use wrapper script for automatic venv_training activation
+# Windows:
+scripts\train.bat
+
+# Linux/Mac/Git Bash:
+bash scripts/train.sh
+
+# Alternative: Direct call with custom parameters
+python scripts/3_train_model.py --mode sft --epochs 5 --learning_rate 1e-4
 
 # Evaluate personality
 python scripts/4_evaluate_personality.py
 ```
+
+**Training Environment Setup**:
+The training scripts require a separate CUDA-enabled environment (`venv_training`). If not already set up:
+```bash
+python scripts/setup_training_environment.py
+```
+
+This installs PyTorch with CUDA, Unsloth, and all training dependencies (~2GB download, 15-20 minutes).
+
+**Expected Dataset Sizes** (based on 365K messages from a typical server):
+- Training examples: ~310,000 (85%)
+- Validation examples: ~36,000 (10%)
+- Test examples: ~18,000 (5%)
+- DPO preference pairs: ~2,500
 
 ### 6. Deploy Bot (On Laptop - 24/7 Operation)
 

@@ -284,26 +284,15 @@ discord-personality-bot/
 ├── .env.example                 # Environment variable template
 ├── .gitignore                   # Git ignore patterns
 │
-├── launcher.py                  # GUI application launcher
-├── bot_controller.py            # Bot process management
-│
-├── gui/                         # Management GUI
-│   ├── __init__.py
-│   ├── app.py                   # Main CustomTkinter application
-│   ├── components/
-│   │   ├── main_window.py       # Main control panel
-│   │   ├── logs_window.py       # Real-time log viewer
-│   │   ├── settings_window.py   # Configuration editor
-│   │   └── system_tray.py       # System tray integration
-│   └── assets/
-│       ├── icon.ico             # Application icon
-│       └── logo.png             # Bot logo
+├── gui/                         # Management GUI (Phase 5 - not yet implemented)
+│   ├── __init__.py              # GUI package init
+│   ├── components/              # GUI components directory (skeleton)
+│   └── assets/                  # GUI assets directory (skeleton)
 │
 ├── bot/                         # Discord bot core
 │   ├── __init__.py
 │   ├── run.py                   # 24/7 bot runner (main entry point)
 │   ├── commands.py              # Admin commands (!setrate, !settemp, !botdata)
-│   ├── handlers.py              # Message event handlers
 │   ├── config.py                # Bot configuration
 │   └── watchdog.py              # 24/7 health monitoring
 │
@@ -316,7 +305,7 @@ discord-personality-bot/
 ├── model/                       # ML model components
 │   ├── __init__.py
 │   ├── inference.py             # Singleton model loading and generation
-│   ├── trainer.py               # QLoRA + DPO training scripts
+│   ├── trainer.py               # QLoRA + DPO training scripts (placeholder)
 │   └── prompts.py               # System prompts and templates
 │
 ├── storage/                     # Data persistence
@@ -325,25 +314,29 @@ discord-personality-bot/
 │   └── vectordb.py              # LanceDB vector storage
 │
 ├── scripts/                     # Standalone utility scripts
+│   ├── 0_setup_bot.py           # Interactive bot setup wizard
 │   ├── fetch_and_embed.py       # Incremental fetch: Discord→SQLite→LanceDB
-│   ├── 2_prepare_training_data.py  # Step 2: Format for training
-│   ├── 3_train_model.py         # Step 3: Fine-tune with QLoRA+DPO
-│   ├── 4_evaluate_personality.py   # Step 4: Test personality match
-│   └── 5_deploy_bot.py          # Step 5: Deploy to laptop
+│   ├── 2_prepare_training_data.py  # Step 2: Format for training (✅ complete)
+│   ├── 3_train_model.py         # Step 3: Fine-tune with QLoRA+DPO (✅ complete)
+│   ├── 4_evaluate_personality.py   # Step 4: Test personality match (placeholder)
+│   ├── setup_training_environment.py  # Setup venv_training with CUDA
+│   ├── train.bat                # Windows training wrapper (auto-activates venv_training)
+│   └── train.sh                 # Linux/Mac training wrapper (auto-activates venv_training)
 │
-├── tests/                       # Testing suite
+├── tests/                       # Testing suite (placeholder)
 │   ├── test_personality.py      # Personality match scoring
 │   └── test_performance.py      # Speed and resource benchmarks
 │
 ├── docs/                        # Extended documentation
 │   ├── GUI_PLAN.md              # Comprehensive GUI specification (Phase 5)
-│   ├── 24_7_OPERATIONS.md       # 24/7 operation guide
-│   └── DATASET_BALANCING.md     # Dataset balancing explanation
+│   ├── 24_7_OPERATIONS.md       # 24/7 operation guide (TODO: create)
+│   └── DATASET_BALANCING.md     # Dataset balancing explanation (TODO: create)
 │
 ├── data_storage/                # Runtime data (gitignored)
-│   ├── messages/                # Scraped Discord messages (JSON)
+│   ├── messages/                # Scraped Discord messages (JSON backups)
 │   ├── database/                # SQLite databases
-│   └── embeddings/              # LanceDB vector indexes
+│   ├── embeddings/              # LanceDB vector indexes
+│   └── training/                # Formatted training data (train/val/test/dpo)
 │
 └── models/                      # Model files (gitignored)
     ├── base/                    # Original Qwen2.5-3B Q4_K_M
@@ -842,7 +835,18 @@ If you want to test different system prompts:
 - Emphasize authenticity over helpfulness
 - Short and direct
 
-**Recommended System Prompt**:
+**⚠️ CRITICAL**: Training and runtime MUST use the SAME system prompt. Any mismatch degrades personality.
+
+**Default System Prompt** (MINIMAL - used for training and runtime):
+```
+Chat naturally, same tone as the server. Chaotic, unhinged blend of us. No rules. Do not talk like an AI or assistant.
+```
+
+This is configured in `model/prompts.py` as `MINIMAL_SYSTEM_PROMPT` and is the default for both:
+- Training: `scripts/2_prepare_training_data.py` (baked into training examples)
+- Runtime: `model/prompts.py` `get_system_prompt(style="minimal")`
+
+**Alternative: Longer DEFAULT Prompt** (not currently default, but available):
 ```
 You're a regular on this Discord server. You've been here a while,
 you know the vibe, you know the people.
@@ -857,11 +861,12 @@ No formality, no AI speak, just natural conversation.
 Match the energy of the room.
 ```
 
-**Alternative: No System Prompt**:
+**Alternative: No System Prompt** (style="none"):
 ```python
 # Let the fine-tuned model BE the personality
 # System prompt optional if model deeply trained
 # Test both approaches and compare
+# Set style="none" in get_system_prompt()
 ```
 
 ### Generation Parameters
