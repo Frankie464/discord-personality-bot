@@ -396,9 +396,9 @@ def verify_configuration():
     print_step(5, "Verifying configuration")
 
     try:
-        from bot.config import load_config
+        from bot.config import get_config
 
-        config = load_config()
+        config = get_config()
         print_success("Configuration loaded successfully!")
 
         # Print summary
