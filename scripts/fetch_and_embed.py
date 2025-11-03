@@ -144,20 +144,20 @@ def main():
         # Get newly added messages (those without embeddings)
         print("📊 Fetching messages for embedding...")
 
-        # Get all messages from the last fetch
-        # (In practice, we'd query messages added since last embed run)
+        # Get ALL messages from database and check which need embeddings
         messages_to_embed = []
 
         for channel in allowed_channels:
             channel_id = channel['channel_id']
 
-            # Get recent messages from this channel
-            recent_messages = db.get_messages_by_channel(
+            # Get ALL messages from this channel (no limit)
+            print(f"   Checking {channel['channel_name']} for messages without embeddings...")
+            all_messages = db.get_messages_by_channel(
                 channel_id=channel_id,
-                limit=stats['total_new']  # Get approximately the new messages
+                limit=None  # Get ALL messages to check for embeddings
             )
 
-            for msg in recent_messages:
+            for msg in all_messages:
                 # Check if already embedded
                 if not vector_db.message_exists(msg['message_id']):
                     messages_to_embed.append(msg)
