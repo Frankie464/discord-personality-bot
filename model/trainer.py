@@ -48,6 +48,12 @@ from typing import Tuple, List, Dict, Any, Optional
 from pathlib import Path
 from datasets import Dataset, load_dataset
 
+# CRITICAL: Disable torch.compile on Windows due to Triton incompatibility
+# This must be done BEFORE importing unsloth
+import torch._dynamo
+torch._dynamo.config.suppress_errors = True
+torch._dynamo.config.disable = True
+
 # IMPORTANT: Import unsloth BEFORE transformers for optimization
 # Unsloth for efficient QLoRA training
 try:
