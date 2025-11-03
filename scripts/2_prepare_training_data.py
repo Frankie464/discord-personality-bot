@@ -39,6 +39,11 @@ import random
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+# Fix Windows console encoding for emoji support
+if sys.platform == 'win32':
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+
 from storage.database import Database
 from data.preprocessor import (
     filter_training_messages,
@@ -186,11 +191,7 @@ def generate_statistics_report(
             'total_examples': len(train_examples) + len(val_examples) + len(test_examples)
         },
         'dpo_pairs': {
-            'total_pairs': len(dpo_pairs),
-            'avg_reaction_diff': sum(
-                pair['metadata']['chosen_reactions'] - pair['metadata'].get('rejected_reactions', 0)
-                for pair in dpo_pairs
-            ) / len(dpo_pairs) if dpo_pairs else 0
+            'total_pairs': len(dpo_pairs)
         },
         'user_balancing': {
             'num_users': len(user_weights),
@@ -273,8 +274,8 @@ def main():
     parser.add_argument(
         '--system_prompt',
         type=str,
-        default="You're a regular on this Discord server. Chat naturally.",
-        help='System prompt for training'
+        default="Chat naturally, same tone as the server. Chaotic, unhinged blend of us. No rules. Do not talk like an AI or assistant.",
+        help='System prompt for training (MUST match runtime prompt in model/prompts.py)'
     )
     parser.add_argument(
         '--seed',

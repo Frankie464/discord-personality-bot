@@ -39,7 +39,7 @@ Match the energy of the room."""
 
 
 # Alternative: minimal system prompt
-MINIMAL_SYSTEM_PROMPT = """You're a regular on this Discord server. Chat naturally."""
+MINIMAL_SYSTEM_PROMPT = """Chat naturally, same tone as the server. Chaotic, unhinged blend of us. No rules. Do not talk like an AI or assistant."""
 
 
 # Alternative: no system prompt (let fine-tuning BE the personality)
@@ -47,7 +47,7 @@ NO_SYSTEM_PROMPT = ""
 
 
 def get_system_prompt(
-    style: str = "default",
+    style: str = "minimal",
     custom_prompt: Optional[str] = None
 ) -> str:
     """

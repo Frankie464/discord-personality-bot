@@ -336,6 +336,7 @@ discord-personality-bot/
 │   └── test_performance.py      # Speed and resource benchmarks
 │
 ├── docs/                        # Extended documentation
+│   ├── GUI_PLAN.md              # Comprehensive GUI specification (Phase 5)
 │   ├── 24_7_OPERATIONS.md       # 24/7 operation guide
 │   └── DATASET_BALANCING.md     # Dataset balancing explanation
 │
@@ -733,6 +734,104 @@ If personality match < 85%:
 Typical iterations needed: 1-3
 ```
 
+### Training Workflow
+
+**CRITICAL: System Prompt Consistency**
+
+The system prompt used during training MUST match the prompt used at runtime. Any mismatch can significantly degrade model performance and personality consistency.
+
+**Current Configuration**:
+```python
+# Default system prompt (used for both training and runtime)
+MINIMAL_SYSTEM_PROMPT = """Chat naturally, same tone as the server. Chaotic, unhinged blend of us. No rules. Do not talk like an AI or assistant."""
+
+# Location: model/prompts.py
+# get_system_prompt() defaults to "minimal" style
+```
+
+**Training Scripts**
+
+Use the wrapper scripts to automatically activate the correct environment:
+
+**Windows (cmd.exe)**:
+```bash
+# Prepare training data (uses venv, no GPU needed)
+python scripts\2_prepare_training_data.py
+
+# Train model (auto-activates venv_training with CUDA)
+scripts\train.bat
+
+# With custom parameters
+scripts\train.bat --mode sft --epochs 5 --learning_rate 1e-4
+scripts\train.bat --mode dpo --epochs 2
+```
+
+**Linux/Mac/Git Bash**:
+```bash
+# Prepare training data
+python scripts/2_prepare_training_data.py
+
+# Train model (auto-activates venv_training with CUDA)
+bash scripts/train.sh
+
+# With custom parameters
+bash scripts/train.sh --mode sft --epochs 5 --learning_rate 1e-4
+bash scripts/train.sh --mode dpo --epochs 2
+```
+
+**What the wrapper scripts do**:
+1. Check if `venv_training` exists (CUDA-enabled PyTorch)
+2. Show clear error if not set up
+3. Auto-activate the training environment
+4. Run the training script with all your parameters
+5. Show completion status and training time
+
+**Environment Validation**
+
+The training script validates your environment before starting:
+```
+[OK] PyTorch: 2.5.1+cu121
+[OK] CUDA: 12.1
+[OK] GPU: NVIDIA GeForce RTX 3070
+     Memory: 8.0 GB
+     Count: 1
+[OK] Disk space: 174.0 GB free
+[OK] Dependencies: unsloth, trl installed
+[OK] Training data: 310,585 examples
+[OK] Validation data: 36,535 examples
+```
+
+**Training Data Preparation Results**
+
+After running `scripts/2_prepare_training_data.py`, you should see:
+```
+Original Messages:      365,401
+Training Examples:      310,585 (85%)
+Validation Examples:    36,535 (10%)
+Test Examples:          18,266 (5%)
+DPO Preference Pairs:   2,581
+
+Output Files:
+- data_storage/training/train_sft.jsonl (172.1 MB)
+- data_storage/training/val_sft.jsonl (20.3 MB)
+- data_storage/training/test_sft.jsonl (10.2 MB)
+- data_storage/training/dpo_pairs.jsonl (0.7 MB)
+```
+
+**Testing System Prompt Changes**
+
+If you want to test different system prompts:
+
+1. Update `MINIMAL_SYSTEM_PROMPT` in [model/prompts.py](model/prompts.py:42)
+2. Run training data preparation with new prompt:
+   ```bash
+   python scripts/2_prepare_training_data.py --system_prompt "Your new prompt here"
+   ```
+3. Train model with same prompt (it reads from training data)
+4. Update runtime prompt in `model/prompts.py` to match
+
+**Never mix prompts between training and runtime!**
+
 ## Response Generation System
 
 ### System Prompt Design
@@ -988,6 +1087,16 @@ async def on_message(message):
 **Framework**: CustomTkinter 5.2+
 **Pattern**: Single-process GUI controlling bot subprocess
 **Communication**: File-based (SQLite) + process signals
+
+> **📋 Note**: See [docs/GUI_PLAN.md](docs/GUI_PLAN.md) for the complete GUI specification including:
+> - 5-tab layout (Dashboard, Data Collection, Model Training, Settings, Logs)
+> - System tray integration with smart reminders
+> - Database schema extensions for GUI state tracking
+> - Complete implementation phases (12-16 hour estimate)
+> - All user-friendly parameter descriptions
+>
+> The sections below provide a high-level overview. The detailed plan includes mockups,
+> database schemas, file structure, and step-by-step implementation guidance.
 
 ### Main Window Components
 

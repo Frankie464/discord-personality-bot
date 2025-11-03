@@ -517,6 +517,53 @@ class Database:
 
             return messages
 
+    def get_all_messages(
+        self,
+        limit: Optional[int] = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Get all messages from database (for training data preparation)
+
+        Args:
+            limit: Optional maximum number of messages to return (most recent first)
+
+        Returns:
+            List of message dictionaries
+        """
+        import json
+
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+
+            query = """
+                SELECT message_id, channel_id, author_id, content, timestamp, reactions, metadata
+                FROM messages
+                ORDER BY timestamp DESC
+            """
+
+            if limit is not None:
+                query += f" LIMIT {limit}"
+
+            cursor.execute(query)
+
+            messages = []
+            for row in cursor.fetchall():
+                # Deserialize reactions and metadata from JSON
+                reactions = json.loads(row['reactions']) if row['reactions'] else None
+                metadata = json.loads(row['metadata']) if row['metadata'] else None
+
+                messages.append({
+                    'message_id': row['message_id'],
+                    'channel_id': row['channel_id'],
+                    'author_id': row['author_id'],
+                    'content': row['content'],
+                    'timestamp': row['timestamp'],
+                    'reactions': reactions,
+                    'metadata': metadata
+                })
+
+            return messages
+
     # ===== Conversation Context Methods =====
 
     def add_conversation_message(
