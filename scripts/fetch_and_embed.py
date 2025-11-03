@@ -140,6 +140,8 @@ def main():
         # Get newly added messages (those without embeddings)
         print("📊 Fetching messages for embedding...")
 
+        from tqdm import tqdm
+
         # Get ALL messages from database and check which need embeddings
         messages_to_embed = []
 
@@ -153,10 +155,21 @@ def main():
                 limit=None  # Get ALL messages to check for embeddings
             )
 
-            for msg in all_messages:
+            # Check each message with progress bar
+            pbar = tqdm(
+                all_messages,
+                desc=f"   Checking embeddings",
+                unit=" msgs",
+                dynamic_ncols=True
+            )
+
+            for msg in pbar:
                 # Check if already embedded
                 if not vector_db.message_exists(msg['message_id']):
                     messages_to_embed.append(msg)
+                    pbar.set_postfix({'need_embedding': len(messages_to_embed)})
+
+            pbar.close()
 
         if not messages_to_embed:
             print("✅ All messages already embedded")
