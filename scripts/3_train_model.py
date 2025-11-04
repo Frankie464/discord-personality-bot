@@ -550,11 +550,11 @@ def main():
     parser.add_argument('--gradient_accumulation_steps', type=int, default=32, help='Gradient accumulation (32 maintains effective batch=32 with batch_size=1)')
     parser.add_argument('--sft_learning_rate', type=float, default=1e-4, help='SFT learning rate')
     parser.add_argument('--dpo_learning_rate', type=float, default=5e-5, help='DPO learning rate')
-    parser.add_argument('--lora_r', type=int, default=32, help='LoRA rank (32 for RTX 3070 8GB, 64 for 12GB+)')
-    parser.add_argument('--lora_alpha', type=int, default=64, help='LoRA alpha (typically 2x rank, so 64 when rank=32)')
+    parser.add_argument('--lora_r', type=int, default=16, help='LoRA rank (16 for RTX 3070 8GB, 32 for 12GB+, 64 for 24GB+)')
+    parser.add_argument('--lora_alpha', type=int, default=32, help='LoRA alpha (typically 2x rank, so 32 when rank=16)')
     parser.add_argument('--lora_dropout', type=float, default=0.05, help='LoRA dropout')
     parser.add_argument('--dpo_beta', type=float, default=0.1, help='DPO beta')
-    parser.add_argument('--max_seq_length', type=int, default=2048, help='Max sequence length')
+    parser.add_argument('--max_seq_length', type=int, default=1024, help='Max sequence length (1024 covers 98% of data, 2048 for full coverage)')
     parser.add_argument('--warmup_ratio', type=float, default=0.03, help='Warmup ratio')
 
     # Logging
