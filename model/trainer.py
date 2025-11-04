@@ -282,8 +282,8 @@ def train_sft(
     output_dir: str = "checkpoints/sft",
     num_train_epochs: int = 5,
     learning_rate: float = 1e-4,
-    per_device_train_batch_size: int = 2,
-    gradient_accumulation_steps: int = 16,
+    per_device_train_batch_size: int = 1,  # Reduced from 2 to avoid gradient offloading
+    gradient_accumulation_steps: int = 32,  # Increased from 16 to maintain effective batch=32
     warmup_ratio: float = 0.03,
     max_seq_length: int = 2048,
     logging_steps: int = 10,
@@ -479,8 +479,8 @@ def train_dpo(
     beta: float = 0.1,
     num_train_epochs: int = 2,
     learning_rate: float = 5e-5,
-    per_device_train_batch_size: int = 2,
-    gradient_accumulation_steps: int = 8,
+    per_device_train_batch_size: int = 1,  # Reduced from 2 to avoid gradient offloading
+    gradient_accumulation_steps: int = 16,  # Increased from 8 to maintain effective batch=16
     max_seq_length: int = 2048,
     max_prompt_length: int = 1024,
     logging_steps: int = 10,
