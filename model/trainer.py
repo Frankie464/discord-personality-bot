@@ -75,6 +75,7 @@ from transformers import (
     TrainingArguments,
     PreTrainedModel,
     PreTrainedTokenizer,
+    EarlyStoppingCallback,
 )
 
 # TRL for SFT and DPO training
@@ -380,7 +381,10 @@ def train_sft(
         # Saving
         save_strategy="steps",
         save_steps=save_steps,
-        save_total_limit=3,  # Keep only 3 most recent checkpoints
+        save_total_limit=5,  # Keep only 5 best checkpoints (saves disk space)
+        load_best_model_at_end=True if eval_dataset else False,  # Load best checkpoint at end
+        metric_for_best_model="eval_loss" if eval_dataset else None,  # Use eval loss to pick best
+        greater_is_better=False,  # Lower eval loss = better
 
         # Evaluation
         eval_strategy="steps" if eval_dataset else "no",
@@ -408,6 +412,17 @@ def train_sft(
         **kwargs
     )
 
+    # Prepare callbacks
+    callbacks = []
+    if eval_dataset:
+        # Early stopping: stop if eval loss doesn't improve for 3 evaluations
+        early_stopping = EarlyStoppingCallback(
+            early_stopping_patience=3,  # Stop after 3 evals without improvement
+            early_stopping_threshold=0.0  # Any improvement counts
+        )
+        callbacks.append(early_stopping)
+        print("✅ Early stopping enabled (patience=3 evaluations)")
+
     # Create SFT trainer
     trainer = SFTTrainer(
         model=model,
@@ -417,6 +432,7 @@ def train_sft(
         formatting_func=formatting_func,
         max_seq_length=max_seq_length,
         args=training_args,
+        callbacks=callbacks,
         packing=False,  # Don't pack multiple examples (preserve conversation structure)
     )
 
@@ -567,7 +583,7 @@ def train_dpo(
         # Saving
         save_strategy="steps",
         save_steps=save_steps,
-        save_total_limit=2,
+        save_total_limit=5,  # Keep only 5 best checkpoints (consistent with SFT)
 
         # Reproducibility
         seed=seed,

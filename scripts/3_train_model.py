@@ -259,6 +259,14 @@ def run_sft_training(
         max_samples=config.get('max_samples')
     )
 
+    # Inform user about validation strategy
+    print(f"\n📊 Validation Strategy:")
+    print(f"   Training evaluation: {config['val_data']}")
+    if 'val_sft_train' in config['val_data']:
+        print(f"   └─ Fast evaluation (~2 minutes per checkpoint)")
+        print(f"   After training: Use scripts/evaluate_checkpoints.py for full evaluation")
+    print()
+
     # Train SFT
     model = train_sft(
         model=model,
@@ -505,8 +513,8 @@ def main():
     )
     parser.add_argument(
         '--val_data',
-        default='data_storage/training/val_sft.jsonl',
-        help='Validation data path'
+        default='data_storage/training/val_sft_train.jsonl',
+        help='Validation data path (use val_sft_train.jsonl for fast eval during training, val_sft_full.jsonl for comprehensive final eval)'
     )
     parser.add_argument(
         '--dpo_data',

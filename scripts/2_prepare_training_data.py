@@ -362,7 +362,14 @@ def main():
         system_prompt=args.system_prompt,
         context_window=5
     )
-    print(f"   ✅ Validation: {len(val_examples):,} conversation examples")
+    print(f"   ✅ Validation (full): {len(val_examples):,} conversation examples")
+
+    # Create small validation subset for fast training evaluation
+    # Full validation set used for post-training assessment
+    val_train_size = min(500, len(val_examples))  # 500 examples for training eval
+    random.seed(args.seed)
+    val_train_examples = random.sample(val_examples, val_train_size)
+    print(f"   ✅ Validation (training): {len(val_train_examples):,} conversation examples (for fast eval)")
 
     test_examples = format_for_training(
         test_messages,
@@ -386,7 +393,8 @@ def main():
     os.makedirs(args.output, exist_ok=True)
 
     save_jsonl(train_examples, os.path.join(args.output, 'train_sft.jsonl'))
-    save_jsonl(val_examples, os.path.join(args.output, 'val_sft.jsonl'))
+    save_jsonl(val_train_examples, os.path.join(args.output, 'val_sft_train.jsonl'))
+    save_jsonl(val_examples, os.path.join(args.output, 'val_sft_full.jsonl'))
     save_jsonl(test_examples, os.path.join(args.output, 'test_sft.jsonl'))
     save_jsonl(dpo_pairs, os.path.join(args.output, 'dpo_pairs.jsonl'))
 
@@ -408,9 +416,12 @@ def main():
     print(f"  2. Run training: python scripts/3_train_model.py")
     print(f"\nOutput files:")
     print(f"  - {os.path.join(args.output, 'train_sft.jsonl')}")
-    print(f"  - {os.path.join(args.output, 'val_sft.jsonl')}")
+    print(f"  - {os.path.join(args.output, 'val_sft_train.jsonl')} ({len(val_train_examples)} examples - for training eval)")
+    print(f"  - {os.path.join(args.output, 'val_sft_full.jsonl')} ({len(val_examples)} examples - for final eval)")
     print(f"  - {os.path.join(args.output, 'test_sft.jsonl')}")
     print(f"  - {os.path.join(args.output, 'dpo_pairs.jsonl')}")
+    print(f"\nNote: Training uses val_sft_train.jsonl for fast evaluation (~2 min)")
+    print(f"      Use scripts/evaluate_checkpoints.py after training for comprehensive eval")
 
 
 if __name__ == '__main__':
