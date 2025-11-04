@@ -546,8 +546,8 @@ def main():
     # Hyperparameters
     parser.add_argument('--sft_epochs', type=int, default=5, help='SFT epochs')
     parser.add_argument('--dpo_epochs', type=int, default=2, help='DPO epochs')
-    parser.add_argument('--batch_size', type=int, default=2, help='Batch size per GPU')
-    parser.add_argument('--gradient_accumulation_steps', type=int, default=16, help='Gradient accumulation')
+    parser.add_argument('--batch_size', type=int, default=1, help='Batch size per GPU (1 for RTX 3070 8GB, 2 for 12GB+)')
+    parser.add_argument('--gradient_accumulation_steps', type=int, default=32, help='Gradient accumulation (32 maintains effective batch=32 with batch_size=1)')
     parser.add_argument('--sft_learning_rate', type=float, default=1e-4, help='SFT learning rate')
     parser.add_argument('--dpo_learning_rate', type=float, default=5e-5, help='DPO learning rate')
     parser.add_argument('--lora_r', type=int, default=64, help='LoRA rank')
