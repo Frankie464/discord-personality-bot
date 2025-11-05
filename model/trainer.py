@@ -75,7 +75,6 @@ from transformers import (
     TrainingArguments,
     PreTrainedModel,
     PreTrainedTokenizer,
-    EarlyStoppingCallback,
     TrainerCallback,
 )
 
@@ -283,6 +282,48 @@ def formatting_func(examples: Dict[str, List]) -> List[str]:
     return texts
 
 
+class SimpleEarlyStopping(TrainerCallback):
+    """
+    Custom early stopping callback that avoids transformers stateful callback bug.
+
+    Stops training when eval_loss doesn't improve for patience evaluations.
+    Does NOT save state, avoiding KeyError in transformers 4.57.1.
+    """
+    def __init__(self, patience: int = 3, threshold: float = 0.0):
+        """
+        Args:
+            patience: Number of evaluations without improvement before stopping
+            threshold: Minimum change to qualify as improvement
+        """
+        self.patience = patience
+        self.threshold = threshold
+        self.best_metric = None
+        self.counter = 0
+
+    def on_evaluate(self, args, state, control, metrics, **kwargs):
+        """Check if evaluation metric improved"""
+        current = metrics.get('eval_loss')
+        if current is None:
+            return control
+
+        # Check if metric improved beyond threshold
+        if self.best_metric is None or current < (self.best_metric - self.threshold):
+            self.best_metric = current
+            self.counter = 0
+            print(f"✅ Eval loss improved: {current:.4f} (best so far)")
+        else:
+            self.counter += 1
+            print(f"⚠️  No improvement: {current:.4f} vs best {self.best_metric:.4f} "
+                  f"(patience: {self.counter}/{self.patience})")
+
+            if self.counter >= self.patience:
+                control.should_training_stop = True
+                print(f"\n🛑 Early stopping triggered after {self.patience} evaluations without improvement!")
+                print(f"   Best eval_loss: {self.best_metric:.4f}\n")
+
+        return control
+
+
 def train_sft(
     model: Any,
     tokenizer: Any,
@@ -432,13 +473,13 @@ def train_sft(
     callbacks.append(CheckpointCallback())
 
     if eval_dataset:
-        # Early stopping: stop if eval loss doesn't improve for 3 evaluations
-        early_stopping = EarlyStoppingCallback(
-            early_stopping_patience=3,  # Stop after 3 evals without improvement
-            early_stopping_threshold=0.0  # Any improvement counts
+        # Custom early stopping to avoid transformers 4.57.1 stateful callback bug
+        early_stopping = SimpleEarlyStopping(
+            patience=3,  # Stop after 3 evals without improvement
+            threshold=0.0  # Any improvement counts
         )
         callbacks.append(early_stopping)
-        print("✅ Early stopping enabled (patience=3 evaluations)")
+        print("✅ Early stopping enabled (patience=3, custom implementation)")
 
     # Create SFT trainer
     trainer = SFTTrainer(
@@ -452,34 +493,6 @@ def train_sft(
         callbacks=callbacks,
         packing=False,  # Don't pack multiple examples (preserve conversation structure)
     )
-
-    # PATCH v3: Monkey-patch _save_checkpoint to bypass EarlyStoppingCallback state bug
-    # This intercepts checkpoint saves and removes the problematic callback from the dict
-    if eval_dataset:
-        original_save = trainer._save_checkpoint
-
-        def patched_save_checkpoint(model, trial):
-            """Wrapper that removes EarlyStoppingCallback from stateful_callbacks during save"""
-            # Save the original stateful_callbacks
-            saved_callbacks = None
-            if hasattr(trainer.state, 'stateful_callbacks'):
-                saved_callbacks = trainer.state.stateful_callbacks.copy()
-                # Remove EarlyStoppingCallback to avoid KeyError
-                if 'EarlyStoppingCallback' in trainer.state.stateful_callbacks:
-                    del trainer.state.stateful_callbacks['EarlyStoppingCallback']
-
-            # Call original save method (only 2 args: model, trial)
-            result = original_save(model, trial)
-
-            # Restore stateful_callbacks
-            if saved_callbacks is not None:
-                trainer.state.stateful_callbacks = saved_callbacks
-
-            return result
-
-        # Replace the method with our patched version
-        trainer._save_checkpoint = patched_save_checkpoint
-        print("🔧 Patched v3: Monkey-patched _save_checkpoint to bypass callback bug")
 
     # Check if resuming from checkpoint
     resume_from_checkpoint = False
