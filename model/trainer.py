@@ -76,6 +76,7 @@ from transformers import (
     PreTrainedModel,
     PreTrainedTokenizer,
     EarlyStoppingCallback,
+    TrainerCallback,
 )
 
 # TRL for SFT and DPO training
@@ -412,8 +413,24 @@ def train_sft(
         **kwargs
     )
 
+    # Custom callback for visible checkpoint saves
+    class CheckpointCallback(TrainerCallback):
+        """Print clear checkpoint save messages that are visible in console"""
+
+        def on_save(self, args, state, control, **kwargs):
+            checkpoint_folder = f"checkpoint-{state.global_step}"
+            print(f"\n💾 Checkpoint saved: {checkpoint_folder}")
+            print(f"   Progress: {state.global_step}/{state.max_steps} steps "
+                  f"({state.epoch:.2f}/{state.num_train_epochs} epochs)")
+            print(f"   ✅ Safe to stop training\n")
+            return control
+
     # Prepare callbacks
     callbacks = []
+
+    # Add checkpoint callback for visibility
+    callbacks.append(CheckpointCallback())
+
     if eval_dataset:
         # Early stopping: stop if eval loss doesn't improve for 3 evaluations
         early_stopping = EarlyStoppingCallback(
@@ -436,13 +453,29 @@ def train_sft(
         packing=False,  # Don't pack multiple examples (preserve conversation structure)
     )
 
+    # Check if resuming from checkpoint
+    latest_checkpoint = None
+    if os.path.exists(output_dir):
+        checkpoints = [d for d in os.listdir(output_dir)
+                       if d.startswith("checkpoint-") and
+                       os.path.isdir(os.path.join(output_dir, d))]
+        if checkpoints:
+            latest_checkpoint = max(checkpoints, key=lambda x: int(x.split("-")[1]))
+            step = int(latest_checkpoint.split("-")[1])
+            print(f"\n🔄 Resuming from {latest_checkpoint}")
+            print(f"   Continuing from step {step}\n")
+        else:
+            print(f"\n▶️  Starting training from step 0 (no checkpoints found)\n")
+    else:
+        print(f"\n▶️  Starting training from step 0 (new training run)\n")
+
     # Train
     print("⏳ Training in progress...")
     print("   This will take 4-5 hours on RTX 3070 (5 epochs)")
     print("   Checkpoints saved every 500 steps\n")
 
     try:
-        trainer.train()
+        trainer.train(resume_from_checkpoint=True)
         print(f"\n✅ SFT training complete!")
         print(f"   Final checkpoint: {output_dir}")
 
@@ -597,20 +630,49 @@ def train_dpo(
         **kwargs
     )
 
+    # Custom callback for visible checkpoint saves
+    class CheckpointCallback(TrainerCallback):
+        """Print clear checkpoint save messages that are visible in console"""
+
+        def on_save(self, args, state, control, **kwargs):
+            checkpoint_folder = f"checkpoint-{state.global_step}"
+            print(f"\n💾 Checkpoint saved: {checkpoint_folder}")
+            print(f"   Progress: {state.global_step}/{state.max_steps} steps "
+                  f"({state.epoch:.2f}/{state.num_train_epochs} epochs)")
+            print(f"   ✅ Safe to stop training\n")
+            return control
+
     # Create DPO trainer
     trainer = DPOTrainer(
         model=model,
         args=dpo_config,
         train_dataset=dpo_dataset,
         tokenizer=tokenizer,
+        callbacks=[CheckpointCallback()],
     )
+
+    # Check if resuming from checkpoint
+    latest_checkpoint = None
+    if os.path.exists(output_dir):
+        checkpoints = [d for d in os.listdir(output_dir)
+                       if d.startswith("checkpoint-") and
+                       os.path.isdir(os.path.join(output_dir, d))]
+        if checkpoints:
+            latest_checkpoint = max(checkpoints, key=lambda x: int(x.split("-")[1]))
+            step = int(latest_checkpoint.split("-")[1])
+            print(f"\n🔄 Resuming DPO training from {latest_checkpoint}")
+            print(f"   Continuing from step {step}\n")
+        else:
+            print(f"\n▶️  Starting DPO training from step 0 (no checkpoints found)\n")
+    else:
+        print(f"\n▶️  Starting DPO training from step 0 (new training run)\n")
 
     # Train
     print("⏳ DPO training in progress...")
     print("   This will take 1-2 hours on RTX 3070 (2 epochs)\n")
 
     try:
-        trainer.train()
+        trainer.train(resume_from_checkpoint=True)
         print(f"\n✅ DPO training complete!")
         print(f"   Expected improvement: +20-30% style consistency")
 
