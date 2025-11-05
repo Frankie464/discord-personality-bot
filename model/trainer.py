@@ -453,15 +453,33 @@ def train_sft(
         packing=False,  # Don't pack multiple examples (preserve conversation structure)
     )
 
-    # PATCH v2: Register EarlyStoppingCallback in stateful_callbacks as empty dict
-    # Transformers expects callbacks in stateful_callbacks to be dicts, not objects
+    # PATCH v3: Monkey-patch _save_checkpoint to bypass EarlyStoppingCallback state bug
+    # This intercepts checkpoint saves and removes the problematic callback from the dict
     if eval_dataset:
-        if not hasattr(trainer.state, 'stateful_callbacks'):
-            trainer.state.stateful_callbacks = {}
-        # Add as empty dict - transformers will populate it during training
-        if 'EarlyStoppingCallback' not in trainer.state.stateful_callbacks:
-            trainer.state.stateful_callbacks['EarlyStoppingCallback'] = {}
-        print("🔧 Patched v2: EarlyStoppingCallback registered (empty dict format)")
+        original_save = trainer._save_checkpoint
+
+        def patched_save_checkpoint(model, trial, metrics=None):
+            """Wrapper that removes EarlyStoppingCallback from stateful_callbacks during save"""
+            # Save the original stateful_callbacks
+            saved_callbacks = None
+            if hasattr(trainer.state, 'stateful_callbacks'):
+                saved_callbacks = trainer.state.stateful_callbacks.copy()
+                # Remove EarlyStoppingCallback to avoid KeyError
+                if 'EarlyStoppingCallback' in trainer.state.stateful_callbacks:
+                    del trainer.state.stateful_callbacks['EarlyStoppingCallback']
+
+            # Call original save method
+            result = original_save(model, trial, metrics)
+
+            # Restore stateful_callbacks
+            if saved_callbacks is not None:
+                trainer.state.stateful_callbacks = saved_callbacks
+
+            return result
+
+        # Replace the method with our patched version
+        trainer._save_checkpoint = patched_save_checkpoint
+        print("🔧 Patched v3: Monkey-patched _save_checkpoint to bypass callback bug")
 
     # Check if resuming from checkpoint
     resume_from_checkpoint = False
