@@ -453,6 +453,14 @@ def train_sft(
         packing=False,  # Don't pack multiple examples (preserve conversation structure)
     )
 
+    # PATCH: Manually register EarlyStoppingCallback in stateful_callbacks
+    # This fixes KeyError: 'EarlyStoppingCallback' in transformers 4.57.1
+    if eval_dataset:
+        if not hasattr(trainer.state, 'stateful_callbacks'):
+            trainer.state.stateful_callbacks = {}
+        trainer.state.stateful_callbacks['EarlyStoppingCallback'] = early_stopping
+        print("🔧 Patched: EarlyStoppingCallback registered in trainer state")
+
     # Check if resuming from checkpoint
     resume_from_checkpoint = False
     if os.path.exists(output_dir):
