@@ -454,7 +454,7 @@ def train_sft(
     )
 
     # Check if resuming from checkpoint
-    latest_checkpoint = None
+    resume_from_checkpoint = False
     if os.path.exists(output_dir):
         checkpoints = [d for d in os.listdir(output_dir)
                        if d.startswith("checkpoint-") and
@@ -462,6 +462,7 @@ def train_sft(
         if checkpoints:
             latest_checkpoint = max(checkpoints, key=lambda x: int(x.split("-")[1]))
             step = int(latest_checkpoint.split("-")[1])
+            resume_from_checkpoint = True
             print(f"\n🔄 Resuming from {latest_checkpoint}")
             print(f"   Continuing from step {step}\n")
         else:
@@ -475,7 +476,7 @@ def train_sft(
     print("   Checkpoints saved every 500 steps\n")
 
     try:
-        trainer.train(resume_from_checkpoint=True)
+        trainer.train(resume_from_checkpoint=resume_from_checkpoint)
         print(f"\n✅ SFT training complete!")
         print(f"   Final checkpoint: {output_dir}")
 
@@ -652,7 +653,7 @@ def train_dpo(
     )
 
     # Check if resuming from checkpoint
-    latest_checkpoint = None
+    resume_from_checkpoint = False
     if os.path.exists(output_dir):
         checkpoints = [d for d in os.listdir(output_dir)
                        if d.startswith("checkpoint-") and
@@ -660,6 +661,7 @@ def train_dpo(
         if checkpoints:
             latest_checkpoint = max(checkpoints, key=lambda x: int(x.split("-")[1]))
             step = int(latest_checkpoint.split("-")[1])
+            resume_from_checkpoint = True
             print(f"\n🔄 Resuming DPO training from {latest_checkpoint}")
             print(f"   Continuing from step {step}\n")
         else:
@@ -672,7 +674,7 @@ def train_dpo(
     print("   This will take 1-2 hours on RTX 3070 (2 epochs)\n")
 
     try:
-        trainer.train(resume_from_checkpoint=True)
+        trainer.train(resume_from_checkpoint=resume_from_checkpoint)
         print(f"\n✅ DPO training complete!")
         print(f"   Expected improvement: +20-30% style consistency")
 
