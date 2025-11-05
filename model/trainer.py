@@ -458,7 +458,7 @@ def train_sft(
     if eval_dataset:
         original_save = trainer._save_checkpoint
 
-        def patched_save_checkpoint(model, trial, metrics=None):
+        def patched_save_checkpoint(model, trial):
             """Wrapper that removes EarlyStoppingCallback from stateful_callbacks during save"""
             # Save the original stateful_callbacks
             saved_callbacks = None
@@ -468,8 +468,8 @@ def train_sft(
                 if 'EarlyStoppingCallback' in trainer.state.stateful_callbacks:
                     del trainer.state.stateful_callbacks['EarlyStoppingCallback']
 
-            # Call original save method
-            result = original_save(model, trial, metrics)
+            # Call original save method (only 2 args: model, trial)
+            result = original_save(model, trial)
 
             # Restore stateful_callbacks
             if saved_callbacks is not None:
