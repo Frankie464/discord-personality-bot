@@ -456,14 +456,26 @@ def train_sft(
 
     # Custom callback for visible checkpoint saves
     class CheckpointCallback(TrainerCallback):
-        """Print clear checkpoint save messages that are visible in console"""
+        """Print clear checkpoint save messages and remove vulnerable PyTorch files"""
 
         def on_save(self, args, state, control, **kwargs):
             checkpoint_folder = f"checkpoint-{state.global_step}"
+            checkpoint_path = os.path.join(args.output_dir, checkpoint_folder)
+
+            # Remove vulnerable optimizer.pt and scheduler.pt files
+            # These trigger PyTorch CVE-2025-32434 on resume with PyTorch < 2.6
+            vulnerable_files = [
+                os.path.join(checkpoint_path, "optimizer.pt"),
+                os.path.join(checkpoint_path, "scheduler.pt")
+            ]
+            for file_path in vulnerable_files:
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+
             print(f"\n💾 Checkpoint saved: {checkpoint_folder}")
             print(f"   Progress: {state.global_step}/{state.max_steps} steps "
                   f"({state.epoch:.2f}/{state.num_train_epochs} epochs)")
-            print(f"   ✅ Safe to stop training\n")
+            print(f"   ✅ Safe to stop training (CVE files auto-removed)\n")
             return control
 
     # Prepare callbacks
@@ -674,14 +686,26 @@ def train_dpo(
 
     # Custom callback for visible checkpoint saves
     class CheckpointCallback(TrainerCallback):
-        """Print clear checkpoint save messages that are visible in console"""
+        """Print clear checkpoint save messages and remove vulnerable PyTorch files"""
 
         def on_save(self, args, state, control, **kwargs):
             checkpoint_folder = f"checkpoint-{state.global_step}"
+            checkpoint_path = os.path.join(args.output_dir, checkpoint_folder)
+
+            # Remove vulnerable optimizer.pt and scheduler.pt files
+            # These trigger PyTorch CVE-2025-32434 on resume with PyTorch < 2.6
+            vulnerable_files = [
+                os.path.join(checkpoint_path, "optimizer.pt"),
+                os.path.join(checkpoint_path, "scheduler.pt")
+            ]
+            for file_path in vulnerable_files:
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+
             print(f"\n💾 Checkpoint saved: {checkpoint_folder}")
             print(f"   Progress: {state.global_step}/{state.max_steps} steps "
                   f"({state.epoch:.2f}/{state.num_train_epochs} epochs)")
-            print(f"   ✅ Safe to stop training\n")
+            print(f"   ✅ Safe to stop training (CVE files auto-removed)\n")
             return control
 
     # Create DPO trainer
