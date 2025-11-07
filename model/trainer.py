@@ -282,19 +282,25 @@ def formatting_func(examples: Dict[str, List]) -> List[str]:
     return texts
 
 
-class SimpleEarlyStopping(TrainerCallback):
+class DelayedEarlyStopping(TrainerCallback):
     """
-    Custom early stopping callback that avoids transformers stateful callback bug.
+    Custom early stopping callback with minimum epoch threshold.
 
-    Stops training when eval_loss doesn't improve for patience evaluations.
-    Does NOT save state, avoiding KeyError in transformers 4.57.1.
+    Prevents premature stopping by:
+    1. Waiting for minimum epochs before allowing early stopping
+    2. Using higher patience (10 vs 3) for more tolerance
+    3. Requiring percentage improvement (0.1%) to ignore noise
+
+    Avoids transformers stateful callback bug (KeyError in transformers 4.57.1).
     """
-    def __init__(self, patience: int = 3, threshold: float = 0.0):
+    def __init__(self, min_epochs: float = 2.0, patience: int = 10, threshold: float = 0.001):
         """
         Args:
+            min_epochs: Minimum epochs to train before early stopping can trigger
             patience: Number of evaluations without improvement before stopping
-            threshold: Minimum change to qualify as improvement
+            threshold: Minimum percentage improvement required (0.001 = 0.1%)
         """
+        self.min_epochs = min_epochs
         self.patience = patience
         self.threshold = threshold
         self.best_metric = None
@@ -306,11 +312,24 @@ class SimpleEarlyStopping(TrainerCallback):
         if current is None:
             return control
 
+        # Don't allow early stopping before minimum epochs
+        if state.epoch < self.min_epochs:
+            if self.best_metric is None or current < self.best_metric:
+                self.best_metric = current
+                print(f"📊 Epoch {state.epoch:.2f}: eval_loss = {current:.4f} "
+                      f"(early stopping suspended until epoch {self.min_epochs})")
+            else:
+                print(f"📊 Epoch {state.epoch:.2f}: eval_loss = {current:.4f} "
+                      f"(early stopping suspended until epoch {self.min_epochs})")
+            return control
+
         # Check if metric improved beyond threshold
         if self.best_metric is None or current < (self.best_metric - self.threshold):
             self.best_metric = current
             self.counter = 0
-            print(f"✅ Eval loss improved: {current:.4f} (best so far)")
+            improvement_pct = 0 if self.best_metric is None else \
+                              ((self.best_metric - current) / self.best_metric * 100)
+            print(f"✅ Eval loss improved: {current:.4f} (best so far, {improvement_pct:.2f}% better)")
         else:
             self.counter += 1
             print(f"⚠️  No improvement: {current:.4f} vs best {self.best_metric:.4f} "
@@ -319,7 +338,8 @@ class SimpleEarlyStopping(TrainerCallback):
             if self.counter >= self.patience:
                 control.should_training_stop = True
                 print(f"\n🛑 Early stopping triggered after {self.patience} evaluations without improvement!")
-                print(f"   Best eval_loss: {self.best_metric:.4f}\n")
+                print(f"   Best eval_loss: {self.best_metric:.4f}")
+                print(f"   Stopped at epoch: {state.epoch:.2f}\n")
 
         return control
 
@@ -485,13 +505,14 @@ def train_sft(
     callbacks.append(CheckpointCallback())
 
     if eval_dataset:
-        # Custom early stopping to avoid transformers 4.57.1 stateful callback bug
-        early_stopping = SimpleEarlyStopping(
-            patience=3,  # Stop after 3 evals without improvement
-            threshold=0.0  # Any improvement counts
+        # Delayed early stopping: waits for min epochs, higher patience, noise tolerance
+        early_stopping = DelayedEarlyStopping(
+            min_epochs=2.0,  # Wait at least 2 full epochs before allowing early stop
+            patience=10,     # Tolerate 10 evals (5000 steps) without improvement
+            threshold=0.001  # Require 0.1% improvement to ignore noise
         )
         callbacks.append(early_stopping)
-        print("✅ Early stopping enabled (patience=3, custom implementation)")
+        print("✅ Early stopping enabled (min_epochs=2, patience=10, threshold=0.1%)")
 
     # Create SFT trainer
     trainer = SFTTrainer(
